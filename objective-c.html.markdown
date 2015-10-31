@@ -456,6 +456,46 @@ distance = 18; // References "long distance" from MyClass implementation
 
 @end // States the end of the implementation
 
+// Starting in Xcode 7.0, you can use generics for greater type safety.
+// For example, this object could be returned by a method which might fail.
+@interface Result <__covariant ObjectType> : NSObject 
+
+- (instancetype)initWithObject:(ObjectType)object;
+- (instancetype)initWithError:(NSError *)error;
+
+- (void)handleSuccess:(void(^)(ObjectType))success
+              failure:(void(^)(NSError *))failure;
+
+// in a real implementation of this class these would be private, to prevent a user from
+// reading the values directly and not handling the error case
+@property (nonatomic) ObjectType containedObject; //This will return an object of type ObjectType
+@property (nonatomic) NSError *error;
+
+@end
+
+// You might return such an object from a method which might fail
+- (Result<NSArray *) *)operationThatMightFail;
+
+//When you call this function, you must provide a matching type for the LHS...
+Result<NSArray *> result = [SomeClass operationThatMightFail];
+
+//...and match the type when you call handleSuccess:failure:, or there is a type error...
+[result handleSuccess:^(NSArray *r) {
+  //do something with result
+}
+              failure:^(NSError *e) {
+                //handle the error
+              }
+// ... of course, Xcode will likely autocomplete this for you. 
+
+// Note that generic syntax is invalid outside of interfaces -- the implementation of
+// handleSuccess:failure: in the @implementation block must use `id` to compile:
+
+- (void)handleSuccess:(void^(id))success
+              failure:(void^(NSError *))failure {
+  //Do something              
+}
+
 ///////////////////////////////////////
 // Categories
 ///////////////////////////////////////
